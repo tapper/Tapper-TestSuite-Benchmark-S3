@@ -6,6 +6,9 @@ use 5.010;
 use strict;
 use warnings;
 
+my $FLOOD_CONSOLE = 0;
+my $pid;
+
 # Make sure all output is captured.
 BEGIN {
         open (STDERR, ">&STDOUT")
@@ -20,14 +23,16 @@ use Test::More tests => 3;
 
 # --- flood console which is watched by the Arduino box to recognize when the system stops ---
 
-# open needs to be outside the fork so we see the error message
-open my $fh, ">", '/dev/ttyUSB0' or die "Can not open serial device: $!";
-my $pid = fork;
-die "Can not fork:$!" if not defined $pid;
-if ($pid == 0) {
-	while (1) {
-		print $fh 0xff;
-	}
+if ($FLOOD_CONSOLE) {
+        # open needs to be outside the fork so we see the error message
+        open my $fh, ">", '/dev/ttyUSB0' or die "Can not open serial device: $!";
+        $pid = fork;
+        die "Can not fork:$!" if not defined $pid;
+        if ($pid == 0) {
+                while (1) {
+                        print $fh 0xff;
+                }
+        }
 }
 
 my $hostname = "taylor"; # Sys::Hostname::hostname;
@@ -100,7 +105,9 @@ my $codespeed_data = {
 ok('benchmarks');
 tap13_yaml($codespeed_data);
 
-kill 9, $pid;
+if ($FLOOD_CONSOLE) {
+        kill 9, $pid;
+}
 
 __END__
 
