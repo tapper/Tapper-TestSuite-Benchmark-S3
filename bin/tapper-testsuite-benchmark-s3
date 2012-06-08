@@ -1,0 +1,103 @@
+#! /usr/bin/perl
+# PODNAME: tapper-testsuite-benchmark-s3
+# ABSTRACT: cmdline frontend to Tapper::TestSuite::Benchmark::S3
+
+use 5.010;
+use strict;
+use warnings;
+
+# Make sure all output is captured.
+BEGIN {
+        open (STDERR, ">&STDOUT")
+         or die "Can not open STDERR to STDOUT: $!\n";
+}
+
+use YAML::Syck;
+use Sys::Hostname;
+use WWW::Mechanize;
+use Test::TAPv13;
+use Test::More tests => 3;
+
+# --- flood console which is watched by the Arduino box to recognize when the system stops ---
+
+# open needs to be outside the fork so we see the error message
+open my $fh, ">", '/dev/ttyUSB0' or die "Can not open serial device: $!";
+my $pid = fork;
+die "Can not fork:$!" if not defined $pid;
+if ($pid == 0) {
+	while (1) {
+		print $fh 0xff;
+	}
+}
+
+my $hostname = Sys::Hostname::hostname;
+diag "Tapper-suite-name: benchmark-s3";
+diag "Tapper-machine-name: $hostname";
+diag "Tapper-section: results";
+diag "Tapper-Wiki-URL: https://osrc.amd.com/wiki/Tapper/TestSuite/BenchmarkS3";
+diag "Tapper-Moreinfo-URL: http://url.amd.com/0ea";
+
+my $mech = WWW::Mechanize->new;
+my (%s3values, $content);
+eval {
+        $SIG{ALRM} = sub {
+                          die "Timeout of 180 seconds. Suspend/Resume did not work."
+                         };
+        alarm 180;
+        my $target_host = $ENV{BENCHMARK_HOSTNAME} || 'uran';
+        my $url         = "http://$target_host/s3";
+        $content        = $mech->get($url)->content;
+        isnt($content, '', 'Getting content.');
+        %s3values = %{YAML::Syck::Load($content)};
+        $content = YAML::Syck::Dump($s3values);
+};
+alarm(0);
+
+is($@, '', 'Getting values.');
+diag $@ if $@;
+
+my $raw_values = split("\n", $content);
+tap13_yaml($raw_values);
+
+# only get time once to make sure suspend and resume report the same time
+my @time = localtime;
+my $now = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+                  1900+$time[5],
+                  1+$time[4],
+                  reverse(@time[0..3]),
+                 );
+
+my $commitid   = time; # currently just something unique
+my $project    = "Linux-Suspend-Resume";
+my $executable = "s3-ubuntu-12.04-x86_64";
+my $branch     = "default";
+
+my $codespeed_data = {
+                      codespeed => [
+                                    {
+                                     benchmark    => "suspend",
+                                     branch       => $branch,
+                                     commitid     => $commitid,
+                                     date         => $now,
+                                     environment  => $hostname,
+                                     executable   => $executable,
+                                     project      => $project,
+                                     result_value => $s3values{led_down},
+                                    },
+                                    {
+                                     benchmark    => "resume",
+                                     branch       => $branch,
+                                     commitid     => $commitid,
+                                     date         => $now,
+                                     environment  => $hostname,
+                                     executable   => $executable,
+                                     project      => $project,
+                                     result_value => $s3values{resume_from_s3} - $s3values{led_down},
+                                    },
+                                   ],
+                     };
+
+ok('benchmarks');
+tap13_yaml($codespeed_data);
+
+kill 9, $pid;

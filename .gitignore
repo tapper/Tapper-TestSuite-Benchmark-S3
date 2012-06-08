@@ -1,0 +1,4 @@
+.*
+!.gitignore
+Tapper-TestSuite-Benchmark-S3-*
+Debian_CPANTS.txt
