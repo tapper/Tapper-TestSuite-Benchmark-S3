@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 # PODNAME: tapper-testsuite-benchmark-s3
-# ABSTRACT: cmdline frontend to Tapper::TestSuite::Benchmark::S3
+# ABSTRACT: Measure suspend/resume cycle with external Arduino box
 
 use 5.010;
 use strict;
@@ -101,3 +101,13 @@ ok('benchmarks');
 tap13_yaml($codespeed_data);
 
 kill 9, $pid;
+
+__END__
+
+=head1 ABOUT
+
+This testsuite triggers suspend resume cycle with an external Arduino
+box and reports values into Tapper suiting automatic passthrough to
+Codespeed graph rendering application.
+
+=cut
