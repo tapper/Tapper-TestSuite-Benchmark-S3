@@ -30,7 +30,7 @@ if ($pid == 0) {
 	}
 }
 
-my $hostname = Sys::Hostname::hostname;
+my $hostname = "taylor"; # Sys::Hostname::hostname;
 diag "Tapper-suite-name: benchmark-s3";
 diag "Tapper-machine-name: $hostname";
 diag "Tapper-section: results";
