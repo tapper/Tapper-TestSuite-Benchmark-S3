@@ -49,7 +49,7 @@ eval {
         $content        = $mech->get($url)->content;
         isnt($content, '', 'Getting content.');
         %s3values = %{YAML::Syck::Load($content)};
-        $content = YAML::Syck::Dump($s3values);
+        $content = YAML::Syck::Dump(\%s3values);
 };
 alarm(0);
 
