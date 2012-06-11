@@ -45,7 +45,7 @@ diag "Tapper-suite-name: benchmark-s3";
 diag "Tapper-machine-name: $hostname";
 diag "Tapper-section: results";
 diag "Tapper-wiki-url: https://osrc.amd.com/wiki/Tapper/TestSuite/BenchmarkS3";
-diag "Tapper-moreinfo-url: http://url.amd.com/0ea"; # http://url.amd.com/0ea"
+diag "Tapper-moreinfo-url: http://url.amd.com/0ea";
 diag "Tapper-reportgroup-arbitrary: $reportgroup" if $reportgroup;
 diag "Tapper-reportgroup-testrun: $testrun"       if $testrun;
 
